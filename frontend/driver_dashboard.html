@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>GramRide | Driver Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-green-50 min-h-screen p-6">
+  
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-green-700">🚜 GramRide Driver Dashboard</h1>
+    <div class="text-right">
+      <p id="driverWelcome" class="text-gray-700 font-medium"></p>
+      <button onclick="logout()" class="bg-red-600 text-white px-4 py-1 mt-1 rounded hover:bg-red-700">Logout</button>
+    </div>
+  </div>
+
+  <div class="bg-white rounded shadow p-4">
+    <h2 class="text-xl font-semibold mb-3 text-green-700">Assigned Rides</h2>
+    <table class="w-full border text-sm md:text-base">
+      <thead class="bg-green-100">
+        <tr>
+          <th class="p-2 border">Pickup</th>
+          <th class="p-2 border">Drop</th>
+          <th class="p-2 border">Fare</th>
+          <th class="p-2 border">Status</th>
+          <th class="p-2 border">Action</th>
+        </tr>
+      </thead>
+      <tbody id="driverRides">
+        <!-- JS Injected -->
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    const currentDriver = JSON.parse(localStorage.getItem("gramrideCurrentUser") || "{}");
+
+    if (!currentDriver || !currentDriver.id || currentDriver.role !== "DRIVER") {
+      alert("⚠️ Please login as a driver.");
+      window.location.href = "login.html";
+    }
+
+    document.getElementById("driverWelcome").textContent = `Welcome, ${currentDriver.fullName || 'Driver'}`;
+
+    function logout() {
+      localStorage.removeItem("gramrideCurrentUser");
+      window.location.href = "login.html";
+    }
+
+    function loadAssignedRides() {
+      fetch(`http://localhost:8080/api/rides/driver/${currentDriver.id}`)
+        .then(res => res.json())
+        .then(rides => {
+          const tbody = document.getElementById("driverRides");
+          tbody.innerHTML = "";
+
+          if (!rides || rides.length === 0) {
+            tbody.innerHTML = "<tr><td colspan='5' class='text-center p-4 text-gray-500'>No assigned rides</td></tr>";
+            return;
+          }
+
+          rides.forEach(ride => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+              <td class="p-2 border">${ride.pickupLocation}</td>
+              <td class="p-2 border">${ride.dropLocation}</td>
+              <td class="p-2 border">₹${ride.fare}</td>
+              <td class="p-2 border">${ride.status}</td>
+              <td class="p-2 border">
+                ${ride.status === "CONFIRMED" 
+                  ? `<button onclick="updateRideStatus(${ride.id}, 'ONGOING')" class="bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700">Start</button>`
+                  : ride.status === "ONGOING"
+                  ? `<button onclick="updateRideStatus(${ride.id}, 'COMPLETED')" class="bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700">Complete</button>`
+                  : `<span class="text-gray-400">—</span>`}
+              </td>
+            `;
+            tbody.appendChild(row);
+          });
+        })
+        .catch(err => {
+          console.error("❌ Failed to fetch driver rides:", err);
+          alert("Error loading assigned rides. Please try again later.");
+        });
+    }
+
+    function updateRideStatus(rideId, status) {
+      fetch(`http://localhost:8080/api/rides/${rideId}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status })
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("Status update failed");
+        return res.text();
+      })
+      .then(() => loadAssignedRides())
+      .catch(err => {
+        console.error("❌ Error updating ride status:", err);
+        alert("Failed to update ride status.");
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", loadAssignedRides);
+  </script>
+</body>
+</html>

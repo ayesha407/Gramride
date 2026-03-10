@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>GramRide | Ride Success</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f0fdf4;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    #summary {
+      background: white;
+      padding: 2rem;
+      border-radius: 1rem;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 800px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+    h2 {
+      grid-column: span 2;
+      text-align: center;
+      color: #15803d;
+      margin-bottom: 1rem;
+    }
+    .section {
+      border: 1px solid #e5e7eb;
+      padding: 1rem;
+      border-radius: 0.5rem;
+    }
+    .section h3 {
+      margin-bottom: 0.5rem;
+      color: #065f46;
+    }
+    .section p {
+      margin: 4px 0;
+    }
+    .btn {
+      padding: 8px 14px;
+      border-radius: 6px;
+      text-decoration: none;
+      color: white;
+      display: inline-block;
+      margin-top: 10px;
+    }
+    .call { background: #16a34a; }
+    .sms { background: #0ea5e9; }
+    .track { background: #2563eb; }
+    .cancel { background: #dc2626; border: none; cursor: pointer; }
+    .dashboard { background: green; }
+    .disabled { opacity: 0.5; cursor: not-allowed; }
+    .complete { background: #059669; border: none; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div id="summary"></div>
+
+  <script>
+    let cancelBtn;
+
+    window.onload = function () {
+      const ride = JSON.parse(localStorage.getItem("latestRide"));
+
+      if (!ride) {
+        alert("No ride information found. Redirecting...");
+        window.location.href = "user_dashboard.html";
+        return;
+      }
+
+      const driver = ride.driver || {
+        fullName: "Not Assigned",
+        phone: "N/A"
+      };
+
+      const eta = new Date(Date.now() + 15 * 60000)
+        .toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      document.getElementById("summary").innerHTML = `
+        <h2>🚀 Ride Booked Successfully!</h2>
+        
+        <div class="section">
+          <h3>🚗 Ride Details</h3>
+          <p><strong>Ride ID:</strong> #${ride.id}</p>
+          <p><strong>Pickup:</strong> ${ride.pickupLocation}</p>
+          <p><strong>Drop:</strong> ${ride.dropLocation}</p>
+          <p><strong>Vehicle:</strong> ${ride.vehicleType}</p>
+          <p><strong>Fare:</strong> ₹${ride.fare}</p>
+          <button id="cancelBtn" class="btn cancel">❌ Cancel Ride</button>
+          <p id="cancelCountdown" style="color: gray; font-size: 14px; margin-top: 4px;"></p>
+          <button onclick="markAsCompleted(${ride.id})" class="btn complete">✅ Mark Ride as Completed</button>
+        </div>
+
+        <div class="section">
+          <h3>👨‍✈️ Driver Info</h3>
+          <p><strong>Name:</strong> ${driver.fullName}</p>
+          <p><strong>Phone:</strong> ${driver.phone}</p>
+          <p><strong>ETA:</strong> ${eta}</p>
+          <div style="margin-top: 10px;">
+            <a href="tel:${driver.phone}" class="btn call">📞 Call</a>
+            <a href="sms:${driver.phone}" class="btn sms">💬 SMS</a>
+          </div>
+          <button onclick="alert('📍 Tracking coming soon!')" class="btn track">📍 Track Driver</button><br/>
+          <a href="user_dashboard.html" class="btn dashboard">Go to Dashboard</a>
+        </div>
+      `;
+
+      cancelBtn = document.getElementById("cancelBtn");
+      startCountdown(ride.id);
+    };
+
+    function startCountdown(rideId) {
+      const deadline = Date.now() + 2 * 60 * 1000;
+      const countdownText = document.getElementById("cancelCountdown");
+
+      function updateCountdown() {
+        const now = Date.now();
+        const secondsLeft = Math.max(0, Math.floor((deadline - now) / 1000));
+        const mins = Math.floor(secondsLeft / 60);
+        const secs = secondsLeft % 60;
+
+        countdownText.innerText = `⏳ Cancel within ${mins}m ${secs}s`;
+
+        if (secondsLeft <= 0) {
+          cancelBtn.disabled = true;
+          cancelBtn.classList.add("disabled");
+          countdownText.innerText = "⛔ Time to cancel has expired.";
+          clearInterval(intervalId);
+        }
+      }
+
+      updateCountdown();
+      const intervalId = setInterval(updateCountdown, 1000);
+
+      cancelBtn.onclick = function () {
+        fetch(`http://localhost:8080/api/rides/${rideId}/status`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "CANCELLED" })
+        })
+        .then(res => {
+          if (!res.ok) return res.text().then(t => { throw new Error(t); });
+          alert("❌ Ride cancelled successfully!");
+          localStorage.removeItem("latestRide");
+          window.location.href = "user_dashboard.html";
+        })
+        .catch(err => {
+          alert("🚫 " + err.message);
+        });
+      };
+    }
+
+    function markAsCompleted(rideId) {
+      fetch(`http://localhost:8080/api/rides/${rideId}/complete`, {
+        method: 'PUT'
+      })
+      .then(res => {
+        if (res.ok) {
+          alert("✅ Ride marked as completed!");
+          localStorage.removeItem("latestRide");
+          window.location.href = "user_dashboard.html";
+        } else {
+          alert("❌ Failed to mark ride as completed.");
+        }
+      })
+      .catch(err => console.error("Error marking ride complete:", err));
+    }
+  </script>
+</body>
+</html>
+

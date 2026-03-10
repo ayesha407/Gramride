@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GramRide | Help</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="relative bg-cover bg-center min-h-screen" style="background-image: url('assets/help.jpeg');">
+
+  <!-- Overlay -->
+  <div class="absolute inset-0 bg-black bg-opacity-40 z-0"></div>
+
+  <!-- Navbar -->
+  <nav class="relative z-10 bg-white bg-opacity-90 shadow-md px-6 py-3 flex justify-between items-center">
+    <h1 class="text-xl font-bold text-green-700">🚜 GramRide</h1>
+    <ul class="flex gap-4 font-medium text-gray-700">
+      <li><a href="user_dashboard.html" class="hover:text-green-700">Home</a></li>
+      <li><a href="book_ride.html" class="hover:text-green-700">Book Ride</a></li>
+      <li><a href="ride_history.html" class="hover:text-green-700">My Rides</a></li>
+      <li><button onclick="logout()" class="text-red-600 hover:underline">Logout</button></li>
+    </ul>
+  </nav>
+
+  <!-- Help Content -->
+  <main class="relative z-10 p-6">
+    <div class="max-w-3xl mx-auto mt-10 bg-white bg-opacity-90 p-6 rounded-xl shadow-lg text-gray-700">
+      <h2 class="text-2xl font-bold text-green-700 mb-4 text-center">Need Help? 🤝</h2>
+
+      <p class="mb-4">
+        We are here to support you in booking your rides quickly and easily. Whether you're a farmer, a worker, or just traveling between villages — GramRide is your travel buddy.
+      </p>
+
+      <ul class="list-disc pl-5 space-y-2">
+        <li>📞 <strong>Call our Helpline:</strong> 1800-123-GRAM (4726)</li>
+        <li>🏠 <strong>Visit Nearby GramRide Kiosk:</strong> Find help at village panchayat centers</li>
+        <li>🎤 <strong>Use Voice:</strong> You can speak your pickup/drop in your local language</li>
+        <li>📍 <strong>Use GPS:</strong> Tap 📍 to auto-detect your current location</li>
+        <li>🚜 <strong>Choose Vehicle:</strong> Based on distance and need – Bike, Car, Auto, or Tractor</li>
+        <li>📄 <strong>Need Help with Booking?</strong> Ask any nearby volunteer or kiosk assistant</li>
+      </ul>
+
+      <div class="mt-6 text-center">
+        <p class="font-semibold text-green-700">We're always here to help you ride safely 🚗💨</p>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    function logout() {
+      localStorage.removeItem("gramrideCurrentUser");
+      window.location.href = "login.html";
+    }
+  </script>
+</body>
+</html>
+

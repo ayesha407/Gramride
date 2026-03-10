@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GramRide | Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="relative bg-cover bg-center min-h-screen" style="background-image: url('assets/village2.jpg');">
+
+  <!-- Overlay -->
+  <div class="absolute inset-0 bg-black bg-opacity-40 z-0"></div>
+
+  <!-- Navbar -->
+  <nav class="relative z-10 bg-white bg-opacity-90 shadow-md px-6 py-3 flex justify-between items-center">
+    <h1 class="text-xl font-bold text-green-700">🚜 GramRide</h1>
+    <ul class="flex gap-4 font-medium text-gray-700">
+      <li><a href="#" class="hover:text-green-700" onclick="location.reload()">Home</a></li>
+      <li><a href="book_ride.html" class="hover:text-green-700">Book Ride</a></li>
+      <li><a href="ride_history.html" class="hover:text-green-700">My Rides</a></li>
+      <li><a href="#" onclick="redirectToFeedback()" class="hover:text-green-700">Give Feedback</a></li>
+
+      <li><a href="help.html" class="hover:text-green-700">Help</a></li>
+      <li><button onclick="logout()" class="text-red-600 hover:underline">Logout</button></li>
+    </ul>
+  </nav>
+
+  <!-- Welcome Message -->
+  <div class="relative z-10 text-center mt-10">
+    <h2 id="welcomeMessage" class="text-3xl font-bold text-white shadow-md"></h2>
+    <p class="text-lg text-white mt-2">Welcome to your dashboard. Let’s ride rural, the smart way! 🛺</p>
+  </div>
+
+  <!-- Feedback Section -->
+  <div id="feedbackSection" class="relative z-10 max-w-4xl mx-auto mt-12 bg-white bg-opacity-90 p-6 rounded-lg shadow-md hidden">
+    <h3 class="text-xl font-semibold text-green-700 mb-4">📝 Give Feedback on Completed Rides</h3>
+    <table class="w-full border text-sm">
+      <thead class="bg-green-100">
+        <tr>
+          <th class="p-2 border">Ride ID</th>
+          <th class="p-2 border">Driver</th>
+          <th class="p-2 border">Vehicle</th>
+          <th class="p-2 border">Action</th>
+        </tr>
+      </thead>
+      <tbody id="completedRidesTableBody">
+        <!-- Populated by JS -->
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Feedback Modal -->
+  <div id="feedbackModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-lg p-6 w-full max-w-md">
+      <h3 class="text-xl font-semibold text-green-700 mb-4">📝 Submit Your Feedback</h3>
+
+      <input type="hidden" id="modalRideId" />
+
+      <label class="block font-medium">Feedback Type</label>
+      <select id="modalFeedbackType" class="w-full border p-2 rounded mb-3">
+        <option value="RASH_DRIVE">Rash Driving</option>
+        <option value="VERY_RASH_DRIVE">Very Rash Driving</option>
+        <option value="POLITE">Polite</option>
+        <option value="ONTIME">On Time</option>
+      </select>
+
+      <label class="block font-medium">Rating</label>
+      <div id="starRating" class="flex mb-3 text-2xl space-x-1 cursor-pointer">
+        <span data-value="1">☆</span>
+        <span data-value="2">☆</span>
+        <span data-value="3">☆</span>
+        <span data-value="4">☆</span>
+        <span data-value="5">☆</span>
+      </div>
+
+      <label class="block font-medium">Comments</label>
+      <textarea id="modalComments" rows="3" class="w-full border p-2 rounded mb-4" placeholder="Write your feedback..."></textarea>
+
+      <div class="flex justify-between">
+        <button onclick="submitFeedback()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Submit</button>
+        <button onclick="closeFeedbackModal()" class="text-red-600 font-medium hover:underline">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let userId = null;
+    let selectedRating = 0;
+
+    // Load user
+    const userData = localStorage.getItem("gramrideCurrentUser");
+    try {
+      const parsed = JSON.parse(userData);
+      if (parsed?.fullName) {
+        userId = parsed.id;
+        document.getElementById("welcomeMessage").textContent = `Hello, ${parsed.fullName}! 👋`;
+      }
+    } catch {}
+
+    function logout() {
+      localStorage.removeItem("gramrideCurrentUser");
+      window.location.href = "login.html";
+    }
+
+    function loadCompletedRides() {
+      if (!userId) return;
+      document.getElementById("feedbackSection").classList.remove("hidden");
+
+      fetch(`http://localhost:8080/api/rides/user/${userId}`)
+        .then(res => res.json())
+        .then(rides => {
+          const tbody = document.getElementById("completedRidesTableBody");
+          tbody.innerHTML = "";
+
+          const completed = rides.filter(r => r.status === "COMPLETED");
+
+          if (completed.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-gray-500 py-4">No completed rides yet.</td></tr>`;
+            return;
+          }
+
+          completed.forEach(ride => {
+            const row = `
+              <tr>
+                <td class="p-2 border">${ride.id}</td>
+                <td class="p-2 border">${ride.driver?.fullName || 'N/A'}</td>
+                <td class="p-2 border">${ride.vehicleType}</td>
+                <td class="p-2 border">
+                  <button onclick="showFeedbackForm(${ride.id})" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">Give Feedback</button>
+                </td>
+              </tr>`;
+            tbody.innerHTML += row;
+          });
+        });
+    }
+
+    function showFeedbackForm(rideId) {
+      document.getElementById("modalRideId").value = rideId;
+      document.getElementById("modalFeedbackType").value = "POLITE";
+      document.getElementById("modalComments").value = "";
+      document.getElementById("modalRating").value = 5;
+      selectedRating = 5;
+      highlightStars(selectedRating);
+      document.getElementById("feedbackModal").classList.remove("hidden");
+    }
+
+    function closeFeedbackModal() {
+      document.getElementById("feedbackModal").classList.add("hidden");
+    }
+
+    function submitFeedback() {
+      const rideId = document.getElementById("modalRideId").value;
+      const feedbackType = document.getElementById("modalFeedbackType").value;
+      const comments = document.getElementById("modalComments").value;
+
+      if (!selectedRating) {
+        alert("Please select a rating!");
+        return;
+      }
+
+      const payload = {
+        rideId: rideId,
+        feedbackType: feedbackType,
+        comments: comments,
+        rating: selectedRating
+      };
+
+      fetch("http://localhost:8080/api/feedback/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to submit feedback");
+        return res.json();
+      })
+      .then(() => {
+        alert("✅ Feedback submitted successfully!");
+        closeFeedbackModal();
+        loadCompletedRides();
+      })
+      .catch(err => {
+        alert("❌ Error: " + err.message);
+      });
+    }
+
+    // Handle star rating
+    document.querySelectorAll("#starRating span").forEach(star => {
+      star.addEventListener("mouseover", () => {
+        const val = parseInt(star.dataset.value);
+        highlightStars(val);
+      });
+
+      star.addEventListener("click", () => {
+        selectedRating = parseInt(star.dataset.value);
+        highlightStars(selectedRating);
+      });
+
+      star.addEventListener("mouseout", () => {
+        highlightStars(selectedRating);
+      });
+    });
+
+    function highlightStars(rating) {
+      document.querySelectorAll("#starRating span").forEach(star => {
+        star.textContent = parseInt(star.dataset.value) <= rating ? "★" : "☆";
+      });
+    }
+    function redirectToFeedback() {
+  fetch(`http://localhost:8080/api/rides/user/${userId}`)
+    .then(res => res.json())
+    .then(rides => {
+      const latestCompleted = rides
+        .filter(r => r.status === "COMPLETED")
+        .sort((a, b) => new Date(b.endTime) - new Date(a.endTime))[0];
+
+      if (!latestCompleted) {
+        alert("No completed rides found to give feedback.");
+        return;
+      }
+
+      // Save latest ride to localStorage
+      localStorage.setItem("latestRide", JSON.stringify(latestCompleted));
+      // Redirect to feedback page
+      window.location.href = "feedback.html";
+    })
+    .catch(err => {
+      alert("Failed to load completed rides.");
+      console.error(err);
+    });
+}
+
+  </script>
+</body>
+</html>
+

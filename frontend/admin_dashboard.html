@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GramRide | Admin Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-tr from-green-50 via-white to-green-100 min-h-screen">
+
+  <!-- Navbar -->
+  <nav class="bg-green-700 text-white p-4 flex justify-between items-center shadow-md">
+    <h1 class="text-xl font-bold flex items-center gap-2">
+      <img src="icons/dashboard.svg" class="w-6 h-6" alt="Dashboard" /> GramRide Admin
+    </h1>
+    <div class="flex gap-4">
+      <button onclick="showSection('users', event)" class="tab-btn hover:bg-green-600 px-3 py-1 rounded transition">Users</button>
+      <button onclick="showSection('rides', event)" class="tab-btn hover:bg-green-600 px-3 py-1 rounded transition">Rides</button>
+      <button onclick="showSection('drivers', event)" class="tab-btn hover:bg-green-600 px-3 py-1 rounded transition">Drivers</button>
+      <button onclick="showSection('feedback', event)" class="tab-btn hover:bg-green-600 px-3 py-1 rounded transition">Feedback</button>
+      <button onclick="logout()" class="bg-red-500 px-4 py-1 rounded hover:bg-red-600">Logout</button>
+    </div>
+  </nav>
+
+  <!-- Dashboard Content -->
+  <div class="p-6 space-y-8">
+
+    <!-- Users Section -->
+    <div id="users" class="tab-section bg-white p-6 rounded shadow">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl font-semibold text-green-700">👥 Registered Users</h2>
+        <select id="userRoleFilter" class="border p-2 rounded" onchange="filterUsersByRole(this.value)">
+          <option value="all">All</option>
+          <option value="user">Only Users</option>
+        </select>
+      </div>
+      <table class="w-full border">
+        <thead class="bg-green-100">
+          <tr>
+            <th class="p-2 border">ID</th>
+            <th class="p-2 border">Name</th>
+            <th class="p-2 border">Email</th>
+            <th class="p-2 border">Role</th>
+          </tr>
+        </thead>
+        <tbody id="userTableBody"></tbody>
+      </table>
+    </div>
+
+    <!-- Rides Section -->
+    <div id="rides" class="tab-section bg-white p-6 rounded shadow hidden">
+      <h2 class="text-2xl font-semibold mb-4 text-green-700">🛺 All Booked Rides</h2>
+      <table class="w-full border">
+        <thead class="bg-green-100">
+          <tr>
+            <th class="p-2 border">ID</th>
+            <th class="p-2 border">User</th>
+            <th class="p-2 border">Pickup</th>
+            <th class="p-2 border">Drop</th>
+            <th class="p-2 border">Fare</th>
+            <th class="p-2 border">Vehicle</th>
+            <th class="p-2 border">Category</th>
+
+          </tr>
+        </thead>
+        <tbody id="rideTableBody"></tbody>
+      </table>
+    </div>
+
+    <!-- Drivers Section -->
+    <div id="drivers" class="tab-section bg-white p-6 rounded shadow hidden">
+      <h2 class="text-2xl font-semibold mb-4 text-green-700">🧑‍✈️ Manage Drivers</h2>
+      <div class="mb-6">
+        <h3 class="font-medium text-green-600">Add New Driver</h3>
+        <div class="grid md:grid-cols-2 gap-4">
+          <input id="driverName" type="text" placeholder="Full Name" class="border p-2 rounded w-full" />
+          <input id="driverEmail" type="email" placeholder="Email" class="border p-2 rounded w-full" />
+          <input id="driverPhone" type="text" placeholder="Phone Number" class="border p-2 rounded w-full" />
+          <input id="driverPassword" type="password" placeholder="Password" class="border p-2 rounded w-full" />
+        </div>
+        <button onclick="addDriver()" class="mt-4 bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700">Add Driver</button>
+      </div>
+      <table class="w-full border">
+        <thead class="bg-green-100">
+          <tr>
+            <th class="p-2 border">ID</th>
+            <th class="p-2 border">Name</th>
+            <th class="p-2 border">Email</th>
+            <th class="p-2 border">Status</th>
+            <th class="p-2 border">Action</th>
+          </tr>
+        </thead>
+        <tbody id="driverTableBody"></tbody>
+      </table>
+    </div>
+
+    <!-- Feedback Section -->
+    <div id="feedback" class="tab-section bg-white p-6 rounded shadow hidden">
+      <h2 class="text-2xl font-semibold text-green-700 mb-4">💬 User Feedback</h2>
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm text-left border border-gray-300">
+          <thead class="bg-green-100 text-gray-700">
+            <tr>
+              <th class="p-3 border">Ride ID</th>
+              <th class="p-3 border">Driver</th>
+              <th class="p-3 border">Feedback Type</th>
+              <th class="p-3 border">Comment</th>
+              <th class="p-3 border">Rating</th>
+            </tr>
+          </thead>
+          <tbody id="feedbackTableBody" class="text-gray-800"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/admin_dashboard.js"></script>
+</body>
+</html>
+
